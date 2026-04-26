@@ -1,24 +1,16 @@
+import Foundation
+
 ///
 /// A type that journals activities and messages.
 ///
-public protocol Journaling: Actor {
+public protocol Journaling: Sendable {
     ///
-    /// Create a new activity object to associate messages with.
+    /// Create a new root activity to associate messages with.
     ///
     func begin(_ label: String) -> Activity
 
     ///
-    /// <#documentation#>
+    /// Drain any pending messages and release backend resources. Blocks the caller until everything previously enqueued has been written.
     ///
-    func debug(_ message: String, _ arguments: [String: String])
-
-    ///
-    /// <#documentation#>
-    ///
-    func info(_ message: String, _ arguments: [String: String])
-
-    ///
-    /// <#documentation#>
-    ///
-    func error(_ message: String, _ arguments: [String: String])
+    func finish()
 }

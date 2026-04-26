@@ -1,0 +1,8 @@
+# Never wrap function declaration or call arguments across multiple lines.
+--maxwidth none
+--wraparguments preserve
+--wrapparameters preserve
+--disable wrap,wrapArguments
+
+# Expand single-statement guard/if/else bodies onto separate lines.
+--enable wrapConditionalBodies
