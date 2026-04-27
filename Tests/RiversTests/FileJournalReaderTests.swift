@@ -60,7 +60,7 @@ struct FileJournalReaderTests {
         let directory = makeTempDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let configuration = FileJournalConfiguration(directory: directory, fileNamePrefix: "log")
+        let configuration = FileJournalConfiguration(directory: directory)
         let messages = [
             makeMessage(seconds: 100, label: "first"),
             makeMessage(seconds: 200, label: "second"),
@@ -77,14 +77,14 @@ struct FileJournalReaderTests {
         let directory = makeTempDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let configuration = FileJournalConfiguration(directory: directory, fileNamePrefix: "log")
+        let configuration = FileJournalConfiguration(directory: directory)
         let messages = [
             makeMessage(seconds: 50, label: "old-1"),
             makeMessage(seconds: 60, label: "old-2"),
             makeMessage(seconds: 70, label: "old-3"),
         ]
         let compressed = try compress(try encode(messages))
-        try compressed.write(to: directory.appendingPathComponent("log-2026-01-01T00-00-00.000Z.jsonl.lzfse"))
+        try compressed.write(to: directory.appendingPathComponent("2026-01-01T00-00-00.000Z.jsonl.lzfse"))
 
         let read = try FileJournalReader(configuration: configuration).read()
 
@@ -96,19 +96,19 @@ struct FileJournalReaderTests {
         let directory = makeTempDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let configuration = FileJournalConfiguration(directory: directory, fileNamePrefix: "log")
+        let configuration = FileJournalConfiguration(directory: directory)
 
         let archiveA = try compress(try encode([
             makeMessage(seconds: 10, label: "a-1"),
             makeMessage(seconds: 30, label: "a-2"),
         ]))
-        try archiveA.write(to: directory.appendingPathComponent("log-2026-01-01T00-00-00.000Z.jsonl.lzfse"))
+        try archiveA.write(to: directory.appendingPathComponent("2026-01-01T00-00-00.000Z.jsonl.lzfse"))
 
         let archiveB = try compress(try encode([
             makeMessage(seconds: 20, label: "b-1"),
             makeMessage(seconds: 40, label: "b-2"),
         ]))
-        try archiveB.write(to: directory.appendingPathComponent("log-2026-01-01T00-00-01.000Z.jsonl.lzfse"))
+        try archiveB.write(to: directory.appendingPathComponent("2026-01-01T00-00-01.000Z.jsonl.lzfse"))
 
         try encode([
             makeMessage(seconds: 50, label: "active-1"),
@@ -125,7 +125,7 @@ struct FileJournalReaderTests {
         let directory = makeTempDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let configuration = FileJournalConfiguration(directory: directory, fileNamePrefix: "log")
+        let configuration = FileJournalConfiguration(directory: directory)
         var data = try encode([makeMessage(seconds: 10, label: "x")])
         data.append(0x0A)
         data.append(0x0A)
@@ -142,7 +142,7 @@ struct FileJournalReaderTests {
         let directory = makeTempDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let configuration = FileJournalConfiguration(directory: directory, fileNamePrefix: "log")
+        let configuration = FileJournalConfiguration(directory: directory)
         try Data("not json\n".utf8).write(to: directory.appendingPathComponent("log.jsonl"))
 
         #expect(throws: (any Error).self) {
@@ -155,12 +155,12 @@ struct FileJournalReaderTests {
         let directory = makeTempDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let configuration = FileJournalConfiguration(directory: directory, fileNamePrefix: "log")
+        let configuration = FileJournalConfiguration(directory: directory)
         try encode([makeMessage(seconds: 1, label: "kept")])
             .write(to: directory.appendingPathComponent("log.jsonl"))
         try Data("garbage".utf8).write(to: directory.appendingPathComponent("README.txt"))
         try Data("garbage".utf8).write(to: directory.appendingPathComponent("log.txt"))
-        try Data("garbage".utf8).write(to: directory.appendingPathComponent("other-2026.jsonl.lzfse"))
+        try Data("garbage".utf8).write(to: directory.appendingPathComponent("notes.json"))
 
         let read = try FileJournalReader(configuration: configuration).read()
 

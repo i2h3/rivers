@@ -5,7 +5,7 @@ import Compression
 import Foundation
 
 ///
-/// A journal that writes messages as JSON-lines into rotating files on disk. Records are encoded one per line. When the active file exceeds the configured size threshold it is renamed with a timestamp, compressed with `lzfse`, and replaced by a fresh active file.
+/// A journal that writes messages as JSON-lines into rotating files on disk. The active file is `log.jsonl`. When it exceeds the configured size threshold it is renamed to `<timestamp>.jsonl`, compressed with `lzfse`, and replaced by a fresh `log.jsonl`. Records are encoded one per line.
 ///
 /// Writes happen on a private serial dispatch queue so callers never block on I/O and the chronological order of `record` calls is preserved across threads.
 ///
@@ -23,7 +23,7 @@ public final class FileJournal: Journaling, @unchecked Sendable {
     ///
     public init(configuration: FileJournalConfiguration) throws {
         self.configuration = configuration
-        queue = DispatchQueue(label: "rivers.file.\(configuration.fileNamePrefix)", qos: .utility)
+        queue = DispatchQueue(label: "rivers.file.\(configuration.directory.lastPathComponent)", qos: .utility)
         roots = ChildCounter()
 
         let encoder = JSONEncoder()
@@ -72,7 +72,7 @@ public final class FileJournal: Journaling, @unchecked Sendable {
     }
 
     private var activeFileURL: URL {
-        configuration.directory.appendingPathComponent("\(configuration.fileNamePrefix).jsonl")
+        configuration.directory.appendingPathComponent("log.jsonl")
     }
 
     private func openActiveFile() throws {
@@ -113,7 +113,7 @@ public final class FileJournal: Journaling, @unchecked Sendable {
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
 
         let timestamp = formatter.string(from: Date()).replacingOccurrences(of: ":", with: "-")
-        let rotatedName = "\(configuration.fileNamePrefix)-\(timestamp).jsonl"
+        let rotatedName = "\(timestamp).jsonl"
         let rotatedURL = configuration.directory.appendingPathComponent(rotatedName)
 
         try FileManager.default.moveItem(at: activeFileURL, to: rotatedURL)

@@ -8,7 +8,7 @@ import Rivers
 struct Executable {
     static func main() throws {
         let directory = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("rivers-example-\(UUID().uuidString)")
-        let configuration = FileJournalConfiguration(directory: directory, maxFileBytes: 1_048_576, fileNamePrefix: "example")
+        let configuration = FileJournalConfiguration(directory: directory, maxFileBytes: 1_048_576)
         let journal: any Journaling = try FileJournal(configuration: configuration)
 
         print("Log directory: \(directory.path(percentEncoded: false))")
@@ -25,7 +25,7 @@ struct Executable {
         server.info("Shutting down.")
         journal.finish()
 
-        let logFile = directory.appendingPathComponent("example.jsonl")
+        let logFile = directory.appendingPathComponent("log.jsonl")
         let contents = try String(contentsOf: logFile, encoding: .utf8)
         print(contents)
     }

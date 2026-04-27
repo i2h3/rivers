@@ -5,7 +5,7 @@ import Compression
 import Foundation
 
 ///
-/// Reads every message previously written by a `FileJournal` for a given configuration. Combines the active `<prefix>.jsonl` file with all rotated `<prefix>-<timestamp>.jsonl.lzfse` archives in the configured directory and returns them as a single chronologically-sorted array.
+/// Reads every message previously written by a `FileJournal` in the configured directory. Combines the active `log.jsonl` file with all rotated `<timestamp>.jsonl.lzfse` archives and returns them as a single chronologically-sorted array.
 ///
 /// Intended as a one-call entry point for tools built on top of this library — visualizers, debuggers, or analyses — that want the full log history without dealing with file enumeration, decompression, or per-line JSON decoding.
 ///
@@ -13,7 +13,7 @@ public struct FileJournalReader: Sendable {
     private let configuration: FileJournalConfiguration
 
     ///
-    /// Create a reader for the given configuration. The configuration's `directory` and `fileNamePrefix` determine which files are read; `maxFileBytes` is ignored.
+    /// Create a reader for the given configuration. The configuration's `directory` determines which files are read; `maxFileBytes` is ignored.
     ///
     public init(configuration: FileJournalConfiguration) {
         self.configuration = configuration
@@ -30,7 +30,6 @@ public struct FileJournalReader: Sendable {
         }
 
         let entries = try manager.contentsOfDirectory(at: configuration.directory, includingPropertiesForKeys: nil)
-        let prefix = configuration.fileNamePrefix
         let decoder = JSONDecoder()
         var messages: [Message] = []
 
@@ -38,9 +37,9 @@ public struct FileJournalReader: Sendable {
             let name = url.lastPathComponent
             let data: Data
 
-            if name == "\(prefix).jsonl" {
+            if name == "log.jsonl" {
                 data = try Data(contentsOf: url)
-            } else if name.hasPrefix("\(prefix)-"), name.hasSuffix(".jsonl.lzfse") {
+            } else if name.hasSuffix(".jsonl.lzfse") {
                 data = try Self.decompress(url: url)
             } else {
                 continue

@@ -20,7 +20,7 @@ struct FileJournalTests {
         let directory = makeTempDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let configuration = FileJournalConfiguration(directory: directory, fileNamePrefix: "test")
+        let configuration = FileJournalConfiguration(directory: directory)
         let journal = try FileJournal(configuration: configuration)
 
         let root = journal.begin("root")
@@ -47,7 +47,7 @@ struct FileJournalTests {
         let directory = makeTempDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let configuration = FileJournalConfiguration(directory: directory, maxFileBytes: 1_024, fileNamePrefix: "rot")
+        let configuration = FileJournalConfiguration(directory: directory, maxFileBytes: 1_024)
         let journal = try FileJournal(configuration: configuration)
 
         let activity = journal.begin("root")
@@ -79,24 +79,24 @@ struct FileJournalTests {
     func readerHandlesMissingDirectory() throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("rivers-missing-\(UUID().uuidString)", isDirectory: true)
-        let configuration = FileJournalConfiguration(directory: directory, fileNamePrefix: "absent")
+        let configuration = FileJournalConfiguration(directory: directory)
         let reader = FileJournalReader(configuration: configuration)
 
         #expect(try reader.read().isEmpty)
     }
 
-    @Test("Reader ignores files that do not match the configured prefix")
-    func readerFiltersByPrefix() throws {
+    @Test("Reader ignores stray files that are not the active log or a journal archive")
+    func readerIgnoresStrayFiles() throws {
         let directory = makeTempDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let configuration = FileJournalConfiguration(directory: directory, fileNamePrefix: "mine")
+        let configuration = FileJournalConfiguration(directory: directory)
         let journal = try FileJournal(configuration: configuration)
         journal.begin("only").info("kept")
         journal.finish()
 
-        let stranger = directory.appendingPathComponent("other.jsonl")
-        try Data("not mine\n".utf8).write(to: stranger)
+        try Data("garbage".utf8).write(to: directory.appendingPathComponent("README.txt"))
+        try Data("garbage".utf8).write(to: directory.appendingPathComponent("other.jsonl"))
 
         let reader = FileJournalReader(configuration: configuration)
         let messages = try reader.read()
