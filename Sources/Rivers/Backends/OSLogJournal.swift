@@ -24,7 +24,7 @@ public final class OSLogJournal: Journaling {
     }
 
     ///
-    /// Begin a new root activity in this journal and emit its initial "Activity started." message.
+    /// Begin a new root activity in this journal and emit its initial message labelled with `label`.
     ///
     public func begin(_ label: String) -> Activity {
         let next = roots.next()
@@ -32,7 +32,7 @@ public final class OSLogJournal: Journaling {
         let activity = Activity(id: id, parent: nil) { [weak self] message in
             self?.record(message)
         }
-        activity.info("Activity started.", ["id": id.description, "label": label])
+        activity.info(label)
 
         return activity
     }

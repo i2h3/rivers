@@ -35,17 +35,13 @@ public struct Activity: Identifiable, Sendable {
     }
 
     ///
-    /// Start a child activity nested under this one. The child gets a fresh hierarchical id (`<this>.<n>`) and an "Activity started." info message is emitted on its behalf.
+    /// Start a child activity nested under this one. The child gets a fresh hierarchical id (`<this>.<n>`) and an info message labelled with `label` is emitted on its behalf.
     ///
     public func begin(_ label: String, _ arguments: [String: String] = [:]) -> Activity {
         let next = children.next()
         let childID = ActivityID(path: id.path + [next])
         let child = Activity(id: childID, parent: id, recordHandler: recordHandler)
-        var startArguments = arguments
-        startArguments["id"] = childID.description
-        startArguments["parent"] = id.description
-        startArguments["label"] = label
-        child.info("Activity started.", startArguments)
+        child.info(label, arguments)
 
         return child
     }

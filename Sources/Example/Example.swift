@@ -56,11 +56,17 @@ struct Executable {
         auth.debug("Looked up session.", ["session_id": "s-7781"])
         auth.info("User resolved.", ["user_id": "u-1042"])
 
+        let cache = request.begin("Cache lookup", ["key": "notes:u-1042:page-1"])
+        cache.debug("Lookup issued.", ["backend": "redis", "host": "cache-01"])
+        cache.info("Miss.", ["age_ms": "0"])
+
         let database = request.begin("Database", ["statement": "SELECT id, title, updated_at FROM notes WHERE owner = $1 ORDER BY updated_at DESC LIMIT 50"])
         database.debug("Query plan cached.")
-        database.info("Rows returned.", ["count": "12", "duration_ms": "4"])
+        database.debug("Slow query threshold exceeded.", ["threshold_ms": "5", "observed_ms": "9"])
+        database.error("Replica lag detected, falling back to primary.", ["lag_ms": "1840"])
+        database.info("Rows returned.", ["count": "12", "duration_ms": "9"])
 
-        request.info("Responded.", ["status": "200", "duration_ms": "9", "bytes": "3417"])
+        request.info("Responded.", ["status": "200", "duration_ms": "16", "bytes": "3417"])
     }
 
     private static func handleCreateNote(server: Activity) {
@@ -72,9 +78,12 @@ struct Executable {
         let validate = request.begin("Validate input")
         validate.debug("Title length within bounds.", ["length": "27"])
         validate.debug("Body within bounds.", ["length": "812"])
+        validate.debug("Tag list parsed.", ["count": "3"])
 
         let database = request.begin("Database", ["statement": "INSERT INTO notes(owner, title, body) VALUES($1, $2, $3) RETURNING id"])
         database.debug("Acquired connection.", ["pool": "primary", "wait_ms": "1"])
+        database.error("Unique constraint violation on first attempt.", ["constraint": "notes_owner_title_uniq", "attempt": "1"])
+        database.debug("Retrying with disambiguated title.", ["attempt": "2"])
         database.info("Row inserted.", ["note_id": "n-3318", "duration_ms": "7"])
 
         let index = request.begin("Search index")
@@ -97,10 +106,13 @@ struct Executable {
         let request = server.begin("DELETE /notes/n-9999", ["request_id": "req-005", "remote_ip": "203.0.113.7"])
 
         let auth = request.begin("Authenticate")
+        auth.debug("Session header present.", ["scheme": "Bearer"])
         auth.info("User resolved.", ["user_id": "u-1042"])
 
         let database = request.begin("Database", ["statement": "DELETE FROM notes WHERE id = $1 AND owner = $2"])
+        database.debug("Acquired connection.", ["pool": "primary", "wait_ms": "0"])
         database.info("No rows affected.", ["note_id": "n-9999", "duration_ms": "3"])
+        database.error("Tombstone write to audit log failed; continuing.", ["error_code": "audit_unavailable"])
 
         request.error("Responded.", ["status": "404", "duration_ms": "6"])
     }

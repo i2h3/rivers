@@ -35,11 +35,11 @@ struct FileJournalTests {
         let messages = try reader.read()
 
         #expect(messages.count == 5)
-        #expect(messages.map(\.label) == ["root", "first", "second", "Activity started.", "third"])
+        #expect(messages.map(\.label) == ["root", "first", "second", "child", "third"])
         #expect(messages[2].arguments == ["k": "v"])
         #expect(messages[3].activity == child.id)
         #expect(messages[3].parent == root.id)
-        #expect(messages[3].arguments["label"] == "child")
+        #expect(messages[3].arguments.isEmpty)
     }
 
     @Test("Rotation compresses old files and the reader merges them")
