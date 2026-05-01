@@ -75,6 +75,37 @@ struct FileJournalTests {
         #expect(dates == dates.sorted())
     }
 
+    @Test("Activity finish records an info message under the activity")
+    func activityFinishRecordsInfoMessage() throws {
+        let directory = makeTempDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let configuration = FileJournalConfiguration(directory: directory)
+        let journal = try FileJournal(configuration: configuration)
+
+        let root = journal.begin("root")
+        let child = root.begin("child")
+        child.finish(["result": "ok"])
+        root.finish()
+
+        journal.finish()
+
+        let reader = FileJournalReader(configuration: configuration)
+        let messages = try reader.read()
+
+        #expect(messages.map(\.label) == ["root", "child", "Finished.", "Finished."])
+
+        #expect(messages[2].level == .info)
+        #expect(messages[2].activity == child.id)
+        #expect(messages[2].parent == root.id)
+        #expect(messages[2].arguments == ["result": "ok"])
+
+        #expect(messages[3].level == .info)
+        #expect(messages[3].activity == root.id)
+        #expect(messages[3].parent == nil)
+        #expect(messages[3].arguments.isEmpty)
+    }
+
     @Test("Reader returns empty when directory is missing")
     func readerHandlesMissingDirectory() throws {
         let directory = FileManager.default.temporaryDirectory

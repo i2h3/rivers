@@ -23,10 +23,13 @@ activity.debug("Got identifier.", ["identifier": "abc"])
 
 let lookup = activity.begin("Database lookup")
 lookup.info("Found row.")
+lookup.finish(["rows": "1"])
 activity.error("Higher level failure.")
 
 journal.finish()
 ```
+
+`activity.finish(_:)` is optional and records an explicit end marker for an activity — useful when its last descendant message would otherwise leave a long-running task looking still in flight. Pass arguments to capture result values or errors.
 
 `journal.finish()` drains the background queue and closes the active file — call it before exit.
 
