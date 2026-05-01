@@ -47,6 +47,13 @@ public struct Activity: Identifiable, Sendable {
     }
 
     ///
+    /// Mark this activity as finished by recording an informational message under it. Calling this is optional; use it when an activity has a long-running task whose end would otherwise not be visible. Pass `arguments` to record result values or errors.
+    ///
+    public func finish(_ arguments: [String: String] = [:]) {
+        info("Finished.", arguments)
+    }
+
+    ///
     /// Record a message at debug level. Use for diagnostic detail useful while developing or troubleshooting.
     ///
     public func debug(_ message: String, _ arguments: [String: String] = [:]) {
