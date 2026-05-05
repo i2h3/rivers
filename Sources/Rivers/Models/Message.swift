@@ -71,7 +71,7 @@ public struct Message: Codable, Sendable {
         date = parsed
         level = try container.decode(Level.self, forKey: .level)
         label = try container.decode(String.self, forKey: .label)
-        arguments = try container.decodeIfPresent([String: String].self, forKey: .arguments) ?? [:]
+        arguments = try container.decodeIfPresent([String: String?].self, forKey: .arguments) ?? [:]
     }
 
     public func encode(to encoder: any Encoder) throws {

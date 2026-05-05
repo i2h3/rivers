@@ -74,4 +74,13 @@ struct MessageTests {
         #expect(decoded.parent == nil)
         #expect(decoded.arguments.isEmpty)
     }
+
+    @Test("Decoding accepts null argument values")
+    func decodingAcceptsNullArgumentValue() throws {
+        let json = #"{"activity":[1],"arguments":{"nothing":null,"value":"v"},"date":"1970-01-01T00:00:00.000Z","label":"x","level":1}"#
+        let decoded = try JSONDecoder().decode(Message.self, from: Data(json.utf8))
+
+        #expect(decoded.arguments["nothing"] == .some(nil))
+        #expect(decoded.arguments["value"] == "v")
+    }
 }
