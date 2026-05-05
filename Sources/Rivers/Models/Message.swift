@@ -35,7 +35,7 @@ public struct Message: Codable, Sendable {
     ///
     /// Structured key/value context attached to the message. Empty when the call site did not supply any.
     ///
-    public let arguments: [String: String]
+    public let arguments: [String: String?]
 
     private enum CodingKeys: String, CodingKey {
         case activity
@@ -49,7 +49,7 @@ public struct Message: Codable, Sendable {
     ///
     /// Create a message. Typically constructed by `Activity` rather than by callers.
     ///
-    public init(activity: ActivityID, parent: ActivityID?, date: Date, level: Level, label: String, arguments: [String: String]) {
+    public init(activity: ActivityID, parent: ActivityID?, date: Date, level: Level, label: String, arguments: [String: String?]) {
         self.activity = activity
         self.parent = parent
         self.date = date

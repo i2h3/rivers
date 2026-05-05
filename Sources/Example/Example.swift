@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Iva Horn
 // SPDX-License-Identifier: MIT
 
+import FileProvider
 import Foundation
 import Rivers
 
@@ -9,13 +10,18 @@ struct Executable {
     static func main() throws {
         let directory = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("rivers-example-\(UUID().uuidString)")
         let configuration = FileJournalConfiguration(directory: directory, maxFileBytes: 1_048_576)
-        let journal: any Journaling = try FileJournal(configuration: configuration)
+
+        let transformerRegistry = TransformerRegistry()
+        let journal: any Journaling = try FileJournal(configuration: configuration, transformerRegistry: transformerRegistry)
 
         print("Log directory: \(directory.path(percentEncoded: false))")
 
         let server = journal.begin("Server")
         work(8)
-        server.info("Server started.", ["service": "notes-api", "version": "0.4.2", "environment": "staging", "port": "8080"])
+        server.info("Server started.", ["service": "notes-api", "version": "0.4.2", "environment": "staging", "port": 8080])
+        server.debug("There is a URL argument here.", ["url": URL(string: "http://localhost:8080")!])
+        server.debug("There is a Date argument here.", ["date": Date()])
+        server.debug("This is a file provider item identifier.", ["item": NSFileProviderItemIdentifier(UUID().uuidString)])
 
         work(20)
         handleSignUp(server: server)
@@ -48,23 +54,23 @@ struct Executable {
         work(1)
         validate.debug("Email syntax accepted.")
         work(2)
-        validate.debug("Password meets policy.", ["min_length": "12"])
+        validate.debug("Password meets policy.", ["min_length": 12])
         validate.finish()
 
         let database = request.begin("Database", ["statement": "INSERT INTO users(email, password_hash) VALUES($1, $2)"])
         work(2)
-        database.debug("Acquired connection.", ["pool": "primary", "wait_ms": "2"])
+        database.debug("Acquired connection.", ["pool": "primary", "wait_ms": 2])
         work(11)
-        database.info("Row inserted.", ["user_id": "u-1042", "duration_ms": "11"])
+        database.info("Row inserted.", ["user_id": nil, "duration_ms": 11])
 
         let auth = request.begin("Issue session")
         work(1)
         auth.debug("Generated token.", ["token_prefix": "sess_9f"])
         work(4)
-        auth.info("Session persisted.", ["session_id": "s-7781", "ttl_minutes": "60"])
+        auth.info("Session persisted.", ["session_id": "s-7781", "ttl_minutes": 60])
         auth.finish()
 
-        request.info("Responded.", ["status": "201", "duration_ms": "23"])
+        request.info("Responded.", ["status": "201", "duration_ms": 23])
     }
 
     private static func handleListNotes(server: Activity) {
@@ -80,19 +86,19 @@ struct Executable {
         work(1)
         cache.debug("Lookup issued.", ["backend": "redis", "host": "cache-01"])
         work(2)
-        cache.info("Miss.", ["age_ms": "0"])
+        cache.info("Miss.", ["age_ms": 0])
 
         let database = request.begin("Database", ["statement": "SELECT id, title, updated_at FROM notes WHERE owner = $1 ORDER BY updated_at DESC LIMIT 50"])
         work(1)
         database.debug("Query plan cached.")
         work(5)
-        database.debug("Slow query threshold exceeded.", ["threshold_ms": "5", "observed_ms": "9"])
+        database.debug("Slow query threshold exceeded.", ["threshold_ms": 5, "observed_ms": 9])
         work(2)
-        database.error("Replica lag detected, falling back to primary.", ["lag_ms": "1840"])
+        database.error("Replica lag detected, falling back to primary.", ["lag_ms": 1840])
         work(2)
-        database.info("Rows returned.", ["count": "12", "duration_ms": "9"])
+        database.info("Rows returned.", ["count": 12, "duration_ms": 9])
 
-        request.info("Responded.", ["status": "200", "duration_ms": "16", "bytes": "3417"])
+        request.info("Responded.", ["status": 200, "duration_ms": 16, "bytes": 3417])
     }
 
     private static func handleCreateNote(server: Activity) {
@@ -104,29 +110,29 @@ struct Executable {
 
         let validate = request.begin("Validate input")
         work(1)
-        validate.debug("Title length within bounds.", ["length": "27"])
+        validate.debug("Title length within bounds.", ["length": 27])
         work(1)
-        validate.debug("Body within bounds.", ["length": "812"])
+        validate.debug("Body within bounds.", ["length": 812])
         work(1)
-        validate.debug("Tag list parsed.", ["count": "3"])
+        validate.debug("Tag list parsed.", ["count": 3])
         validate.finish()
 
         let database = request.begin("Database", ["statement": "INSERT INTO notes(owner, title, body) VALUES($1, $2, $3) RETURNING id"])
         work(1)
-        database.debug("Acquired connection.", ["pool": "primary", "wait_ms": "1"])
+        database.debug("Acquired connection.", ["pool": "primary", "wait_ms": 1])
         work(3)
-        database.error("Unique constraint violation on first attempt.", ["constraint": "notes_owner_title_uniq", "attempt": "1"])
+        database.error("Unique constraint violation on first attempt.", ["constraint": "notes_owner_title_uniq", "attempt": 1])
         work(1)
-        database.debug("Retrying with disambiguated title.", ["attempt": "2"])
+        database.debug("Retrying with disambiguated title.", ["attempt": 2])
         work(7)
-        database.info("Row inserted.", ["note_id": "n-3318", "duration_ms": "7"])
+        database.info("Row inserted.", ["note_id": "n-3318", "duration_ms": 7])
 
         let index = request.begin("Search index")
         work(1)
         index.debug("Enqueued.", ["queue": "search-index", "job_id": "j-5520"])
         index.finish()
 
-        request.info("Responded.", ["status": "201", "duration_ms": "14"])
+        request.info("Responded.", ["status": 201, "duration_ms": 14])
     }
 
     private static func handleUpdateNoteUnauthorized(server: Activity) {
@@ -138,7 +144,7 @@ struct Executable {
         work(1)
         auth.error("Rejected.", ["reason": "no_session_cookie"])
 
-        request.error("Responded.", ["status": "401", "duration_ms": "1"])
+        request.error("Responded.", ["status": 401, "duration_ms": 1])
     }
 
     private static func handleDeleteNoteNotFound(server: Activity) {
@@ -152,13 +158,13 @@ struct Executable {
 
         let database = request.begin("Database", ["statement": "DELETE FROM notes WHERE id = $1 AND owner = $2"])
         work(1)
-        database.debug("Acquired connection.", ["pool": "primary", "wait_ms": "0"])
+        database.debug("Acquired connection.", ["pool": "primary", "wait_ms": 0])
         work(3)
-        database.info("No rows affected.", ["note_id": "n-9999", "duration_ms": "3"])
+        database.info("No rows affected.", ["note_id": "n-9999", "duration_ms": 3])
         work(1)
         database.error("Tombstone write to audit log failed; continuing.", ["error_code": "audit_unavailable"])
 
-        request.error("Responded.", ["status": "404", "duration_ms": "6"])
+        request.error("Responded.", ["status": 404, "duration_ms": 6])
     }
 
     private static func work(_ ms: UInt32) {

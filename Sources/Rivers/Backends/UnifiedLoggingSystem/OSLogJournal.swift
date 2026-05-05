@@ -9,18 +9,20 @@ import os
 ///
 /// Writes happen on a private serial dispatch queue so callers never block and the chronological order of `record` calls is preserved across threads.
 ///
-public final class OSLogJournal: Journaling {
+public final class OSLogJournal: Journaling, MessageDispatching {
     private let logger: Logger
     private let queue: DispatchQueue
     private let roots: ChildCounter
+    let transformerRegistry: TransformerRegistry
 
     ///
     /// Create a journal that logs under the given subsystem and category. These map directly onto `os.Logger`'s `subsystem` and `category` parameters.
     ///
-    public init(subsystem: String, category: String) {
+    public init(subsystem: String, category: String, transformerRegistry: TransformerRegistry = TransformerRegistry()) {
         logger = Logger(subsystem: subsystem, category: category)
         queue = DispatchQueue(label: "rivers.oslog.\(subsystem).\(category)", qos: .utility)
         roots = ChildCounter()
+        self.transformerRegistry = transformerRegistry
     }
 
     ///
@@ -29,15 +31,14 @@ public final class OSLogJournal: Journaling {
     public func begin(_ label: String) -> Activity {
         let next = roots.next()
         let id = ActivityID(path: [next])
-        let activity = Activity(id: id, parent: nil) { [weak self] message in
-            self?.record(message)
-        }
+        
+        let activity = Activity(id: id, parent: nil, writer: makeAndDispatchMessage)
         activity.info(label)
 
         return activity
     }
 
-    private func record(_ message: Message) {
+    func dispatch(_ message: Message) {
         queue.async { [self] in
             write(message)
         }

@@ -23,24 +23,28 @@ public struct Activity: Identifiable, Sendable {
     ///
     public let start: Date
 
-    let recordHandler: @Sendable (Message) -> Void
+    ///
+    /// The closure to call to record a message in the log.
+    ///
+    private let write: Writer
+
     let children: ChildCounter
 
-    init(id: ActivityID, parent: ActivityID?, recordHandler: @escaping @Sendable (Message) -> Void) {
+    init(id: ActivityID, parent: ActivityID?, writer: @escaping Writer) {
         self.id = id
         self.parent = parent
         start = Date()
-        self.recordHandler = recordHandler
+        self.write = writer
         children = ChildCounter()
     }
 
     ///
     /// Start a child activity nested under this one. The child gets a fresh hierarchical id (`<this>.<n>`) and an info message labelled with `label` is emitted on its behalf.
     ///
-    public func begin(_ label: String, _ arguments: [String: String] = [:]) -> Activity {
+    public func begin(_ label: String, _ arguments: [String: Any?] = [:]) -> Activity {
         let next = children.next()
         let childID = ActivityID(path: id.path + [next])
-        let child = Activity(id: childID, parent: id, recordHandler: recordHandler)
+        let child = Activity(id: childID, parent: id, writer: write)
         child.info(label, arguments)
 
         return child
@@ -49,32 +53,28 @@ public struct Activity: Identifiable, Sendable {
     ///
     /// Mark this activity as finished by recording an informational message under it. Calling this is optional; use it when an activity has a long-running task whose end would otherwise not be visible. Pass `arguments` to record result values or errors.
     ///
-    public func finish(_ arguments: [String: String] = [:]) {
+    public func finish(_ arguments: [String: Any?] = [:]) {
         info("Finished.", arguments)
     }
 
     ///
     /// Record a message at debug level. Use for diagnostic detail useful while developing or troubleshooting.
     ///
-    public func debug(_ message: String, _ arguments: [String: String] = [:]) {
-        record(level: .debug, message: message, arguments: arguments)
+    public func debug(_ message: String, _ arguments: [String: Any?] = [:]) {
+        write(id, parent, Date(), .debug, message, arguments)
     }
 
     ///
     /// Record a message at info level. The default for general-purpose messages.
     ///
-    public func info(_ message: String, _ arguments: [String: String] = [:]) {
-        record(level: .info, message: message, arguments: arguments)
+    public func info(_ message: String, _ arguments: [String: Any?] = [:]) {
+        write(id, parent, Date(), .info, message, arguments)
     }
 
     ///
     /// Record a message at error level. Use for failures or unexpected conditions.
     ///
-    public func error(_ message: String, _ arguments: [String: String] = [:]) {
-        record(level: .error, message: message, arguments: arguments)
-    }
-
-    private func record(level: Level, message: String, arguments: [String: String]) {
-        recordHandler(Message(activity: id, parent: parent, date: Date(), level: level, label: message, arguments: arguments))
+    public func error(_ message: String, _ arguments: [String: Any?] = [:]) {
+        write(id, parent, Date(), .error, message, arguments)
     }
 }

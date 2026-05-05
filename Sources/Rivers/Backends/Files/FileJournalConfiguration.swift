@@ -10,12 +10,12 @@ public struct FileJournalConfiguration: Sendable {
     ///
     /// The directory in which log files are written. Created on demand if it does not exist. The directory itself namespaces the journal — one journal per directory.
     ///
-    public var directory: URL
+    public let directory: URL
 
     ///
     /// The size threshold in bytes at which the active log file is rotated and compressed.
     ///
-    public var maxFileBytes: Int
+    public let maxFileBytes: Int
 
     ///
     /// Create a configuration. Defaults to a 5 MiB rotation threshold.

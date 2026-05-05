@@ -9,7 +9,7 @@ import Foundation
 ///
 /// Writes happen on a private serial dispatch queue so callers never block on I/O and the chronological order of `record` calls is preserved across threads.
 ///
-public final class FileJournal: Journaling, @unchecked Sendable {
+public final class FileJournal: Journaling, MessageDispatching, @unchecked Sendable {
     private let configuration: FileJournalConfiguration
     private let queue: DispatchQueue
     private let roots: ChildCounter
@@ -18,10 +18,12 @@ public final class FileJournal: Journaling, @unchecked Sendable {
     private var handle: FileHandle?
     private var bytesWritten: Int = 0
 
+    let transformerRegistry: TransformerRegistry
+
     ///
     /// Open (or create) the active log file in the configured directory. Throws if the directory cannot be created or the file cannot be opened for writing.
     ///
-    public init(configuration: FileJournalConfiguration) throws {
+    public init(configuration: FileJournalConfiguration, transformerRegistry: TransformerRegistry = TransformerRegistry()) throws {
         self.configuration = configuration
         queue = DispatchQueue(label: "rivers.file.\(configuration.directory.lastPathComponent)", qos: .utility)
         roots = ChildCounter()
@@ -29,6 +31,7 @@ public final class FileJournal: Journaling, @unchecked Sendable {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .sortedKeys
         self.encoder = encoder
+        self.transformerRegistry = transformerRegistry
 
         try FileManager.default.createDirectory(at: configuration.directory, withIntermediateDirectories: true)
         try openActiveFile()
@@ -41,16 +44,13 @@ public final class FileJournal: Journaling, @unchecked Sendable {
         let next = roots.next()
         let id = ActivityID(path: [next])
 
-        let activity = Activity(id: id, parent: nil) { [weak self] message in
-            self?.record(message)
-        }
-
+        let activity = Activity(id: id, parent: nil, writer: makeAndDispatchMessage)
         activity.info(label)
 
         return activity
     }
 
-    private func record(_ message: Message) {
+    func dispatch(_ message: Message) {
         queue.async { [self] in
             do {
                 try write(message)

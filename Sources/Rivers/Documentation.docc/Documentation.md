@@ -19,7 +19,7 @@ let activity = journal.begin("Fetch item")
 activity.debug("Got identifier.", ["identifier": "abc"])
 let lookup = activity.begin("Database lookup")
 lookup.info("Found row.")
-lookup.finish(["rows": "1"])
+lookup.finish(["rows": 1])
 journal.finish()
 ```
 
