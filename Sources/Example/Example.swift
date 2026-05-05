@@ -19,6 +19,7 @@ struct Executable {
         let server = journal.begin("Server")
         work(8)
         server.info("Server started.", ["service": "notes-api", "version": "0.4.2", "environment": "staging", "port": 8080])
+        server.debug("This is a nil value argument.", ["nothing": nil])
         server.debug("There is a URL argument here.", ["url": URL(string: "http://localhost:8080")!])
         server.debug("There is a Date argument here.", ["date": Date()])
         server.debug("This is a file provider item identifier.", ["item": NSFileProviderItemIdentifier(UUID().uuidString)])
