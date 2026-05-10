@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2026 Iva Horn
 // SPDX-License-Identifier: MIT
 
-import FileProvider
 import Foundation
 import Testing
 @testable import Rivers
@@ -27,35 +26,35 @@ struct TransformerRegistryTests {
     @Test("Transform returns nil for types without a registered closure")
     func unregisteredTypeReturnsNil() {
         let registry = TransformerRegistry()
-        let identifier = NSFileProviderItemIdentifier(UUID().uuidString)
+        let name = Notification.Name(UUID().uuidString)
 
-        #expect(registry.transform(identifier) == nil)
+        #expect(registry.transform(name) == nil)
     }
 
     @Test("A registered closure is invoked for values of its type")
     func registeredClosureRunsForMatchingType() {
         let registry = TransformerRegistry()
-        registry.register { (identifier: NSFileProviderItemIdentifier) in
-            identifier.rawValue
+        registry.register { (name: Notification.Name) in
+            name.rawValue
         }
 
         let raw = "item-abc"
-        let identifier = NSFileProviderItemIdentifier(raw)
+        let name = Notification.Name(raw)
 
-        #expect(registry.transform(identifier) == raw)
+        #expect(registry.transform(name) == raw)
     }
 
     @Test("Registering a second closure for the same type replaces the previous one")
     func registeringReplacesPreviousClosure() {
         let registry = TransformerRegistry()
-        registry.register { (identifier: NSFileProviderItemIdentifier) in
-            "first:\(identifier.rawValue)"
+        registry.register { (name: Notification.Name) in
+            "first:\(name.rawValue)"
         }
-        registry.register { (identifier: NSFileProviderItemIdentifier) in
-            "second:\(identifier.rawValue)"
+        registry.register { (name: Notification.Name) in
+            "second:\(name.rawValue)"
         }
 
-        #expect(registry.transform(NSFileProviderItemIdentifier("x")) == "second:x")
+        #expect(registry.transform(Notification.Name("x")) == "second:x")
     }
 
     @Test("Without a transformer the journal records String(describing:) of the argument")
@@ -67,15 +66,15 @@ struct TransformerRegistryTests {
         let journal = try FileJournal(configuration: configuration)
 
         let raw = "item-\(UUID().uuidString)"
-        let identifier = NSFileProviderItemIdentifier(raw)
+        let name = Notification.Name(raw)
         let activity = journal.begin("root")
-        activity.info("touched", ["item": identifier])
+        activity.info("touched", ["item": name])
         journal.finish()
 
         let reader = FileJournalReader(configuration: configuration)
         let touched = try #require(try reader.read().first { $0.label == "touched" })
 
-        let expected: [String: String?] = ["item": String(describing: identifier)]
+        let expected: [String: String?] = ["item": String(describing: name)]
         #expect(touched.arguments == expected)
         #expect(touched.arguments["item"] != .some(.some(raw)))
     }
@@ -86,17 +85,17 @@ struct TransformerRegistryTests {
         defer { try? FileManager.default.removeItem(at: directory) }
 
         let registry = TransformerRegistry()
-        registry.register { (identifier: NSFileProviderItemIdentifier) in
-            identifier.rawValue
+        registry.register { (name: Notification.Name) in
+            name.rawValue
         }
 
         let configuration = FileJournalConfiguration(directory: directory)
         let journal = try FileJournal(configuration: configuration, transformerRegistry: registry)
 
         let raw = "item-\(UUID().uuidString)"
-        let identifier = NSFileProviderItemIdentifier(raw)
+        let name = Notification.Name(raw)
         let activity = journal.begin("root")
-        activity.info("touched", ["item": identifier])
+        activity.info("touched", ["item": name])
         journal.finish()
 
         let reader = FileJournalReader(configuration: configuration)
@@ -104,7 +103,7 @@ struct TransformerRegistryTests {
 
         let expected: [String: String?] = ["item": raw]
         #expect(touched.arguments == expected)
-        #expect(touched.arguments["item"] != .some(.some(String(describing: identifier))))
+        #expect(touched.arguments["item"] != .some(.some(String(describing: name))))
     }
 
     @Test("Two journals with different registries record the same value differently")
@@ -117,8 +116,8 @@ struct TransformerRegistryTests {
         }
 
         let custom = TransformerRegistry()
-        custom.register { (identifier: NSFileProviderItemIdentifier) in
-            identifier.rawValue
+        custom.register { (name: Notification.Name) in
+            name.rawValue
         }
 
         let plainJournal = try FileJournal(configuration: FileJournalConfiguration(directory: plainDirectory))
@@ -127,9 +126,9 @@ struct TransformerRegistryTests {
             transformerRegistry: custom
         )
 
-        let identifier = NSFileProviderItemIdentifier("shared-item")
-        plainJournal.begin("root").info("touched", ["item": identifier])
-        customJournal.begin("root").info("touched", ["item": identifier])
+        let name = Notification.Name("shared-item")
+        plainJournal.begin("root").info("touched", ["item": name])
+        customJournal.begin("root").info("touched", ["item": name])
         plainJournal.finish()
         customJournal.finish()
 
