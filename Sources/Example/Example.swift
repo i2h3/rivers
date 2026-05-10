@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2026 Iva Horn
 // SPDX-License-Identifier: MIT
 
-import FileProvider
 import Foundation
 import Rivers
 
@@ -22,7 +21,6 @@ struct Executable {
         server.debug("This is a nil value argument.", ["nothing": nil])
         server.debug("There is a URL argument here.", ["url": URL(string: "http://localhost:8080")!])
         server.debug("There is a Date argument here.", ["date": Date()])
-        server.debug("This is a file provider item identifier.", ["item": NSFileProviderItemIdentifier(UUID().uuidString)])
 
         work(20)
         handleSignUp(server: server)

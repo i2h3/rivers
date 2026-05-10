@@ -41,7 +41,10 @@ public struct Activity: Identifiable, Sendable {
     ///
     /// Start a child activity nested under this one. The child gets a fresh hierarchical id (`<this>.<n>`) and an info message labelled with `label` is emitted on its behalf.
     ///
-    public func begin(_ label: String, _ arguments: [String: Any?] = [:]) -> Activity {
+    /// - Parameters:
+    ///     - label: How the beginning of an activity should be labled in the logs. The `StaticString` type enforces definition at compile time intentionally.
+    ///
+    public func begin(_ label: StaticString, _ arguments: [String: Any?] = [:]) -> Activity {
         let next = children.next()
         let childID = ActivityID(path: id.path + [next])
         let child = Activity(id: childID, parent: id, writer: write)
@@ -60,21 +63,30 @@ public struct Activity: Identifiable, Sendable {
     ///
     /// Record a message at debug level. Use for diagnostic detail useful while developing or troubleshooting.
     ///
-    public func debug(_ message: String, _ arguments: [String: Any?] = [:]) {
+    /// - Parameters:
+    ///     - message: The text for the message in the log. The `StaticString` type enforces definition at compile time intentionally.
+    ///
+    public func debug(_ message: StaticString, _ arguments: [String: Any?] = [:]) {
         write(id, parent, Date(), .debug, message, arguments)
     }
 
     ///
     /// Record a message at info level. The default for general-purpose messages.
     ///
-    public func info(_ message: String, _ arguments: [String: Any?] = [:]) {
+    /// - Parameters:
+    ///     - message: The text for the message in the log. The `StaticString` type enforces definition at compile time intentionally.
+    ///
+    public func info(_ message: StaticString, _ arguments: [String: Any?] = [:]) {
         write(id, parent, Date(), .info, message, arguments)
     }
 
     ///
     /// Record a message at error level. Use for failures or unexpected conditions.
     ///
-    public func error(_ message: String, _ arguments: [String: Any?] = [:]) {
+    /// - Parameters:
+    ///     - message: The text for the message in the log. The `StaticString` type enforces definition at compile time intentionally.
+    ///
+    public func error(_ message: StaticString, _ arguments: [String: Any?] = [:]) {
         write(id, parent, Date(), .error, message, arguments)
     }
 }

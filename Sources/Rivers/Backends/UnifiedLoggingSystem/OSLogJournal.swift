@@ -25,10 +25,7 @@ public final class OSLogJournal: Journaling, MessageDispatching {
         self.transformerRegistry = transformerRegistry
     }
 
-    ///
-    /// Begin a new root activity in this journal and emit its initial message labelled with `label`.
-    ///
-    public func begin(_ label: String) -> Activity {
+    public func begin(_ label: StaticString) -> Activity {
         let next = roots.next()
         let id = ActivityID(path: [next])
         

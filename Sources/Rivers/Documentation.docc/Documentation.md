@@ -27,6 +27,8 @@ Two backends ship with the library: ``FileJournal`` writes JSON-lines to disk an
 
 To consume previously-written logs, ``FileJournalReader`` reads every record from a `FileJournalConfiguration` directory — including rotated, compressed archives — and returns them as a single chronologically-sorted array of ``Message``.
 
+Activity labels and message texts are `StaticString` to enforce separation of uniform log messages and sensitive user information during run time.
+
 ## Topics
 
 ### Recording activities and messages
