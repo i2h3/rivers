@@ -71,7 +71,7 @@ jobs:
         run: |
           xcodebuild test \
             -scheme Rivers-Package \
-            -destination 'platform=tvOS Simulator,name=Any tvOS Device' \
+            -destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation)' \
             -enableCodeCoverage YES
 
   test-watchos:
@@ -90,7 +90,7 @@ jobs:
         run: |
           xcodebuild test \
             -scheme Rivers-Package \
-            -destination 'platform=watchOS Simulator,name=Any watchOS Device' \
+            -destination 'platform=watchOS Simulator,name=Apple Watch Series 11 (46mm)' \
             -enableCodeCoverage YES
 
   test-visionos:
