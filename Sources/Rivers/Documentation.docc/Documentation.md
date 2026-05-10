@@ -38,6 +38,10 @@ Activity labels and message texts are `StaticString` to enforce separation of un
 - ``Message``
 - ``Level``
 
+### Formatting Argument Values
+
+- ``TransformerRegistry``
+
 ### Journals
 
 - ``Journaling``
