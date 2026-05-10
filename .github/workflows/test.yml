@@ -109,5 +109,5 @@ jobs:
         run: |
           xcodebuild test \
             -scheme Rivers-Package \
-            -destination 'platform=visionOS Simulator,name=Apple Vision Pro' \
+            -destination 'platform=visionOS Simulator,name=Any visionOS Simulator Device' \
             -enableCodeCoverage YES
