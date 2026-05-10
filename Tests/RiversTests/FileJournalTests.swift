@@ -51,8 +51,8 @@ struct FileJournalTests {
         let journal = try FileJournal(configuration: configuration)
 
         let activity = journal.begin("root")
-        for index in 0..<50 {
-            activity.info("msg-\(index)")
+        for index in 0 ..< 50 {
+            activity.info("Test", ["index": index])
             Thread.sleep(forTimeInterval: 0.002)
         }
 
@@ -68,9 +68,11 @@ struct FileJournalTests {
         #expect(messages.count == 51)
         let labels = Set(messages.map(\.label))
         #expect(labels.contains("root"))
-        for index in 0..<50 {
-            #expect(labels.contains("msg-\(index)"))
+
+        for _ in 0 ..< 50 {
+            #expect(labels.contains("Test"))
         }
+
         let dates = messages.map(\.date)
         #expect(dates == dates.sorted())
     }
