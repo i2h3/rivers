@@ -25,10 +25,10 @@ activity.debug("Got identifier.", ["identifier": "abc"])
 
 let lookup = activity.begin("Database lookup")
 lookup.info("Found row.")
-lookup.finish(["rows": "1"])
+lookup.finish("Found row.", ["rows": "1"])
 activity.error("Higher level failure.")
 
-journal.finish()
+journal.finish("Finished.")
 ```
 
 Tools built on top of the library — visualizers, debuggers, batch analyses — can read every message previously written by a `FileJournal` with `FileJournalReader`. It enumerates the configured directory, transparently decompresses rotated `lzfse` archives, and returns the merged history as a single chronologically-sorted array.

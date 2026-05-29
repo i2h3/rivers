@@ -29,13 +29,13 @@ struct FileJournalTests {
         let child = root.begin("child")
         child.debug("third")
 
-        journal.finish()
+        journal.finish("Finished.")
 
         let reader = FileJournalReader(configuration: configuration)
         let messages = try reader.read()
 
-        #expect(messages.count == 5)
-        #expect(messages.map(\.label) == ["root", "first", "second", "child", "third"])
+        #expect(messages.count == 6)
+        #expect(messages.map(\.label) == ["root", "first", "second", "child", "third", "Finished."])
         #expect(messages[2].arguments == ["k": "v"])
         #expect(messages[3].activity == child.id)
         #expect(messages[3].parent == root.id)
@@ -56,7 +56,7 @@ struct FileJournalTests {
             Thread.sleep(forTimeInterval: 0.002)
         }
 
-        journal.finish()
+        journal.finish("Finished.")
 
         let entries = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
         let archives = entries.filter { $0.lastPathComponent.hasSuffix(".jsonl.lzfse") }
@@ -65,7 +65,7 @@ struct FileJournalTests {
         let reader = FileJournalReader(configuration: configuration)
         let messages = try reader.read()
 
-        #expect(messages.count == 51)
+        #expect(messages.count == 52)
         let labels = Set(messages.map(\.label))
         #expect(labels.contains("root"))
 
@@ -87,15 +87,15 @@ struct FileJournalTests {
 
         let root = journal.begin("root")
         let child = root.begin("child")
-        child.finish(["result": "ok"])
-        root.finish()
+        child.finish("Finished.", ["result": "ok"])
+        root.finish("Finished.")
 
-        journal.finish()
+        journal.finish("Finished.")
 
         let reader = FileJournalReader(configuration: configuration)
         let messages = try reader.read()
 
-        #expect(messages.map(\.label) == ["root", "child", "Finished.", "Finished."])
+        #expect(messages.map(\.label) == ["root", "child", "Finished.", "Finished.", "Finished."])
 
         #expect(messages[2].level == .info)
         #expect(messages[2].activity == child.id)
@@ -126,7 +126,7 @@ struct FileJournalTests {
         let configuration = FileJournalConfiguration(directory: directory)
         let journal = try FileJournal(configuration: configuration)
         journal.begin("only").info("kept")
-        journal.finish()
+        journal.finish("Finished.")
 
         try Data("garbage".utf8).write(to: directory.appendingPathComponent("README.txt"))
         try Data("garbage".utf8).write(to: directory.appendingPathComponent("other.jsonl"))
@@ -134,6 +134,6 @@ struct FileJournalTests {
         let reader = FileJournalReader(configuration: configuration)
         let messages = try reader.read()
 
-        #expect(messages.map(\.label) == ["only", "kept"])
+        #expect(messages.map(\.label) == ["only", "kept", "Finished."])
     }
 }

@@ -58,9 +58,12 @@ public final class FileJournal: Journaling, MessageDispatching, @unchecked Senda
     }
 
     ///
-    /// Drain pending messages, flush the active file to disk, and close it. Blocks until everything previously enqueued has been written.
+    /// Record `message` as a final top-level entry, drain pending messages, flush the active file to disk, and close it. Blocks until everything previously enqueued has been written.
     ///
-    public func finish() {
+    public func finish(_ message: StaticString) {
+        let id = ActivityID(path: [roots.next()])
+        makeAndDispatchMessage(activity: id, parent: nil, date: Date(), level: .info, label: message, arguments: [:])
+
         queue.sync {
             try? handle?.synchronize()
             try? handle?.close()

@@ -56,8 +56,12 @@ public struct Activity: Identifiable, Sendable {
     ///
     /// Mark this activity as finished by recording an informational message under it. Calling this is optional; use it when an activity has a long-running task whose end would otherwise not be visible. Pass `arguments` to record result values or errors.
     ///
-    public func finish(_ arguments: [String: Any?] = [:]) {
-        info("Finished.", arguments)
+    /// - Parameters:
+    ///     - message: The text for the end-of-activity message. The `StaticString` type enforces definition at compile time intentionally.
+    ///     - arguments: Optional structured key/value context to attach to the message.
+    ///
+    public func finish(_ message: StaticString, _ arguments: [String: Any?] = [:]) {
+        info(message, arguments)
     }
 
     ///

@@ -69,7 +69,7 @@ struct TransformerRegistryTests {
         let name = Notification.Name(raw)
         let activity = journal.begin("root")
         activity.info("touched", ["item": name])
-        journal.finish()
+        journal.finish("Finished.")
 
         let reader = FileJournalReader(configuration: configuration)
         let touched = try #require(try reader.read().first { $0.label == "touched" })
@@ -96,7 +96,7 @@ struct TransformerRegistryTests {
         let name = Notification.Name(raw)
         let activity = journal.begin("root")
         activity.info("touched", ["item": name])
-        journal.finish()
+        journal.finish("Finished.")
 
         let reader = FileJournalReader(configuration: configuration)
         let touched = try #require(try reader.read().first { $0.label == "touched" })
@@ -129,8 +129,8 @@ struct TransformerRegistryTests {
         let name = Notification.Name("shared-item")
         plainJournal.begin("root").info("touched", ["item": name])
         customJournal.begin("root").info("touched", ["item": name])
-        plainJournal.finish()
-        customJournal.finish()
+        plainJournal.finish("Finished.")
+        customJournal.finish("Finished.")
 
         let plain = try #require(
             try FileJournalReader(configuration: FileJournalConfiguration(directory: plainDirectory))
@@ -157,7 +157,7 @@ struct TransformerRegistryTests {
 
         let url = URL(string: "https://example.com/a/b?c=1")!
         journal.begin("root").info("hit", ["url": url])
-        journal.finish()
+        journal.finish("Finished.")
 
         let reader = FileJournalReader(configuration: configuration)
         let hit = try #require(try reader.read().first { $0.label == "hit" })

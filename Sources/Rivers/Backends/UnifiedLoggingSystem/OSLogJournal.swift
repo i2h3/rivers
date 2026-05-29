@@ -42,9 +42,12 @@ public final class OSLogJournal: Journaling, MessageDispatching {
     }
 
     ///
-    /// Drain pending messages. Blocks until everything previously enqueued has been forwarded to `os.Logger`.
+    /// Record `message` as a final top-level entry, then drain pending messages. Blocks until everything previously enqueued has been forwarded to `os.Logger`.
     ///
-    public func finish() {
+    public func finish(_ message: StaticString) {
+        let id = ActivityID(path: [roots.next()])
+        makeAndDispatchMessage(activity: id, parent: nil, date: Date(), level: .info, label: message, arguments: [:])
+
         queue.sync {}
     }
 

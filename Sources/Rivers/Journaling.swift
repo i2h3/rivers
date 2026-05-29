@@ -18,7 +18,10 @@ public protocol Journaling: Sendable {
     func begin(_ label: StaticString) -> Activity
 
     ///
-    /// Drain any pending messages and release backend resources. Blocks the caller until everything previously enqueued has been written.
+    /// Record `message` as an info-level entry on a fresh root activity, then drain any pending messages and release backend resources. Blocks the caller until everything previously enqueued has been written.
     ///
-    func finish()
+    /// - Parameters:
+    ///     - message: The text recorded as the journal's final entry before resources are released. The `StaticString` type enforces definition at compile time intentionally.
+    ///
+    func finish(_ message: StaticString)
 }

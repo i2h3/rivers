@@ -36,8 +36,8 @@ struct Executable {
         work(15)
         server.info("Shutting down.")
         work(5)
-        server.finish()
-        journal.finish()
+        server.finish("Finished.")
+        journal.finish("Finished.")
 
         let logFile = directory.appendingPathComponent("log.jsonl")
         let contents = try String(contentsOf: logFile, encoding: .utf8)
@@ -54,7 +54,7 @@ struct Executable {
         validate.debug("Email syntax accepted.")
         work(2)
         validate.debug("Password meets policy.", ["min_length": 12])
-        validate.finish()
+        validate.finish("Finished.")
 
         let database = request.begin("Database", ["statement": "INSERT INTO users(email, password_hash) VALUES($1, $2)"])
         work(2)
@@ -67,7 +67,7 @@ struct Executable {
         auth.debug("Generated token.", ["token_prefix": "sess_9f"])
         work(4)
         auth.info("Session persisted.", ["session_id": "s-7781", "ttl_minutes": 60])
-        auth.finish()
+        auth.finish("Finished.")
 
         request.info("Responded.", ["status": "201", "duration_ms": 23])
     }
@@ -114,7 +114,7 @@ struct Executable {
         validate.debug("Body within bounds.", ["length": 812])
         work(1)
         validate.debug("Tag list parsed.", ["count": 3])
-        validate.finish()
+        validate.finish("Finished.")
 
         let database = request.begin("Database", ["statement": "INSERT INTO notes(owner, title, body) VALUES($1, $2, $3) RETURNING id"])
         work(1)
@@ -129,7 +129,7 @@ struct Executable {
         let index = request.begin("Search index")
         work(1)
         index.debug("Enqueued.", ["queue": "search-index", "job_id": "j-5520"])
-        index.finish()
+        index.finish("Finished.")
 
         request.info("Responded.", ["status": 201, "duration_ms": 14])
     }
