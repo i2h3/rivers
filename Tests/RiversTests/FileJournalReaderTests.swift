@@ -78,7 +78,8 @@ struct FileJournalReaderTests {
 
         let read = try FileJournalReader(configuration: configuration).read()
 
-        #expect(read.map(\.label) == ["alpha", "first", "second"])
+        #expect(read.map(\.label) == ["Session", "first", "second"])
+        #expect(read[0].arguments["id"] == "alpha")
     }
 
     @Test("Decompresses a rotated lzfse archive")
@@ -98,7 +99,8 @@ struct FileJournalReaderTests {
 
         let read = try FileJournalReader(configuration: configuration).read()
 
-        #expect(read.map(\.label) == ["alpha", "old-1", "old-2", "old-3"])
+        #expect(read.map(\.label) == ["Session", "old-1", "old-2", "old-3"])
+        #expect(read[0].arguments["id"] == "alpha")
     }
 
     @Test("Merges multiple archives and the active file in one session, sorted by date")
@@ -128,7 +130,8 @@ struct FileJournalReaderTests {
 
         let read = try FileJournalReader(configuration: configuration).read()
 
-        #expect(read.map(\.label) == ["alpha", "a-1", "b-1", "a-2", "b-2", "active-1", "active-2"])
+        #expect(read.map(\.label) == ["Session", "a-1", "b-1", "a-2", "b-2", "active-1", "active-2"])
+        #expect(read[0].arguments["id"] == "alpha")
     }
 
     @Test("Reader orders sessions by their earliest message and namespaces each with its index")
@@ -152,13 +155,15 @@ struct FileJournalReaderTests {
 
         let read = try FileJournalReader(configuration: configuration).read()
 
-        #expect(read.map(\.label) == ["earlier", "earlier-1", "earlier-2", "later", "later-1", "later-2"])
+        #expect(read.map(\.label) == ["Session", "earlier-1", "earlier-2", "Session", "later-1", "later-2"])
 
         #expect(read[0].activity == ActivityID(path: [1]))
+        #expect(read[0].arguments["id"] == "earlier")
         #expect(read[1].activity == ActivityID(path: [1, 1]))
         #expect(read[1].parent == ActivityID(path: [1]))
 
         #expect(read[3].activity == ActivityID(path: [2]))
+        #expect(read[3].arguments["id"] == "later")
         #expect(read[4].activity == ActivityID(path: [2, 1]))
         #expect(read[4].parent == ActivityID(path: [2]))
     }
@@ -178,7 +183,8 @@ struct FileJournalReaderTests {
 
         let read = try FileJournalReader(configuration: configuration).read()
 
-        #expect(read.map(\.label) == ["alpha", "x", "y"])
+        #expect(read.map(\.label) == ["Session", "x", "y"])
+        #expect(read[0].arguments["id"] == "alpha")
     }
 
     @Test("Throws when an archive contains invalid JSON")
@@ -211,6 +217,7 @@ struct FileJournalReaderTests {
 
         let read = try FileJournalReader(configuration: configuration).read()
 
-        #expect(read.map(\.label) == ["kept", "kept"])
+        #expect(read.map(\.label) == ["Session", "kept"])
+        #expect(read[0].arguments["id"] == "kept")
     }
 }

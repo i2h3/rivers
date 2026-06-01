@@ -7,7 +7,7 @@ import Foundation
 ///
 /// Reads every message previously written by one or more `FileJournal` sessions in the configured parent directory. Each immediate subdirectory of `configuration.directory` is treated as one session; its `log.jsonl` and any `<timestamp>-<suffix>.jsonl.lzfse` archives are combined into a single chronologically-sorted array.
 ///
-/// Sessions are ordered by the date of their earliest message and assigned a chronological session index `N` starting at 1. Every loaded message has `N` prepended to its `activity` and `parent` paths; messages whose `parent` was `nil` are reparented to the synthetic session root `ActivityID(path: [N])`. A synthetic root message — activity `[N]`, no parent, level `info`, label set to the session folder name — is inserted in front of each session's messages so consumers see a concrete node at the top of every session tree.
+/// Sessions are ordered by the date of their earliest message and assigned a chronological session index `N` starting at 1. Every loaded message has `N` prepended to its `activity` and `parent` paths; messages whose `parent` was `nil` are reparented to the synthetic session root `ActivityID(path: [N])`. A synthetic root message — activity `[N]`, no parent, level `info`, label `"Session"`, with the session folder name carried in the `id` argument — is inserted in front of each session's messages so consumers see a uniform "Session" node at the top of every session tree and can recover the on-disk folder identifier from `arguments["id"]`.
 ///
 /// The flat `[Message]` return contract is preserved: downstream tools never have to inspect the on-disk folder layout to disambiguate trees from different journal lifetimes.
 ///
@@ -62,8 +62,8 @@ public struct FileJournalReader: Sendable {
                 parent: nil,
                 date: session.earliestDate.addingTimeInterval(-0.001),
                 level: .info,
-                label: session.sessionID,
-                arguments: [:],
+                label: "Session",
+                arguments: ["id": session.sessionID],
             ))
 
             for message in session.messages {

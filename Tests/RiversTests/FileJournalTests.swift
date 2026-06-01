@@ -36,7 +36,8 @@ struct FileJournalTests {
         let messages = try reader.read()
 
         #expect(messages.count == 7)
-        #expect(messages.map(\.label) == [configuration.sessionID, "root", "first", "second", "child", "third", "Finished."])
+        #expect(messages.map(\.label) == ["Session", "root", "first", "second", "child", "third", "Finished."])
+        #expect(messages[0].arguments["id"] == configuration.sessionID)
         #expect(messages[3].arguments == ["k": "v"])
         #expect(messages[4].activity == ActivityID(path: [1, 1, 1]))
         #expect(messages[4].parent == ActivityID(path: [1, 1]))
@@ -69,8 +70,9 @@ struct FileJournalTests {
 
         #expect(messages.count == 53)
         let labels = Set(messages.map(\.label))
-        #expect(labels.contains(configuration.sessionID))
+        #expect(labels.contains("Session"))
         #expect(labels.contains("root"))
+        #expect(messages.first { $0.label == "Session" }?.arguments["id"] == configuration.sessionID)
 
         for _ in 0 ..< 50 {
             #expect(labels.contains("Test"))
@@ -98,7 +100,8 @@ struct FileJournalTests {
         let reader = FileJournalReader(configuration: configuration)
         let messages = try reader.read()
 
-        #expect(messages.map(\.label) == [configuration.sessionID, "root", "child", "Finished.", "Finished.", "Finished."])
+        #expect(messages.map(\.label) == ["Session", "root", "child", "Finished.", "Finished.", "Finished."])
+        #expect(messages[0].arguments["id"] == configuration.sessionID)
 
         #expect(messages[3].level == .info)
         #expect(messages[3].activity == ActivityID(path: [1, 1, 1]))
@@ -138,7 +141,8 @@ struct FileJournalTests {
         let reader = FileJournalReader(configuration: configuration)
         let messages = try reader.read()
 
-        #expect(messages.map(\.label) == [configuration.sessionID, "only", "kept", "Finished."])
+        #expect(messages.map(\.label) == ["Session", "only", "kept", "Finished."])
+        #expect(messages[0].arguments["id"] == configuration.sessionID)
     }
 
     @Test
@@ -161,11 +165,12 @@ struct FileJournalTests {
         let reader = FileJournalReader(configuration: FileJournalConfiguration(directory: directory))
         let messages = try reader.read()
 
-        #expect(messages.map(\.label) == [configurationA.sessionID, "a-root", "a-event", "a-done", configurationB.sessionID, "b-root", "b-event", "b-done"])
+        #expect(messages.map(\.label) == ["Session", "a-root", "a-event", "a-done", "Session", "b-root", "b-event", "b-done"])
 
         let firstSynthetic = messages[0]
         #expect(firstSynthetic.activity == ActivityID(path: [1]))
         #expect(firstSynthetic.parent == nil)
+        #expect(firstSynthetic.arguments["id"] == configurationA.sessionID)
 
         let aRoot = messages[1]
         #expect(aRoot.activity == ActivityID(path: [1, 1]))
@@ -174,6 +179,7 @@ struct FileJournalTests {
         let secondSynthetic = messages[4]
         #expect(secondSynthetic.activity == ActivityID(path: [2]))
         #expect(secondSynthetic.parent == nil)
+        #expect(secondSynthetic.arguments["id"] == configurationB.sessionID)
 
         let bRoot = messages[5]
         #expect(bRoot.activity == ActivityID(path: [2, 1]))
