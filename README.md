@@ -31,7 +31,9 @@ activity.error("Higher level failure.")
 journal.finish("Finished.")
 ```
 
-Tools built on top of the library — visualizers, debuggers, batch analyses — can read every message previously written by a `FileJournal` with `FileJournalReader`. It enumerates the configured directory, transparently decompresses rotated `lzfse` archives, and returns the merged history as a single chronologically-sorted array.
+The configured `directory` is presented to Finder as an opaque macOS package: a viewer app that declares a UTI conforming to `com.apple.package` for the `rivers` extension will receive the directory on double-click as if it were a single document. To make this work the library appends `.rivers` to the path automatically if the URL you pass omits it, so the on-disk parent always carries that extension — pass `Logs/MyApp` and the journal writes into `Logs/MyApp.rivers`.
+
+Tools built on top of the library — visualizers, debuggers, batch analyses — can read every message previously written by a `FileJournal` with `FileJournalReader`. It enumerates each session subdirectory inside the configured parent, transparently decompresses rotated `lzfse` archives, prepends a synthetic root message per session (labeled with the session folder name) and namespaces every activity path under a chronological session index so trees from different journal lifetimes do not collide, then returns the combined result as a single chronologically-sorted array.
 
 ```swift
 let reader = FileJournalReader(configuration: configuration)

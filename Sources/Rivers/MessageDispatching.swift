@@ -22,8 +22,8 @@ extension MessageDispatching {
     ///
     /// Shared implementation to translate a ``Writer`` call into a ``Message`` while also transforming the arguments with the help of ``TransformerRegistry``.
     ///
-    internal func makeAndDispatchMessage(activity: ActivityID, parent: ActivityID?, date: Date, level: Level, label: StaticString, arguments: [String: Any?]) {
-        var descriptiveArguments = Dictionary<String, String?>(minimumCapacity: arguments.count)
+    func makeAndDispatchMessage(activity: ActivityID, parent: ActivityID?, date: Date, level: Level, label: StaticString, arguments: [String: Any?]) {
+        var descriptiveArguments = [String: String?](minimumCapacity: arguments.count)
 
         for (key, value) in arguments {
             guard let value else {

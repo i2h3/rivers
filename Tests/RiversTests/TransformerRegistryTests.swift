@@ -2,23 +2,24 @@
 // SPDX-License-Identifier: MIT
 
 import Foundation
-import Testing
 @testable import Rivers
+import Testing
 
 @Suite("TransformerRegistry")
 struct TransformerRegistryTests {
     private func makeTempDirectory() -> URL {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("rivers-tests-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathExtension(FileJournalConfiguration.directoryExtension)
         try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
 
         return url
     }
 
     @Test("Default registry transforms URL into its absolute string")
-    func defaultURLTransformer() {
+    func defaultURLTransformer() throws {
         let registry = TransformerRegistry()
-        let url = URL(string: "https://example.com/path?q=1")!
+        let url = try #require(URL(string: "https://example.com/path?q=1"))
 
         #expect(registry.transform(url) == url.absoluteString)
     }
@@ -123,7 +124,7 @@ struct TransformerRegistryTests {
         let plainJournal = try FileJournal(configuration: FileJournalConfiguration(directory: plainDirectory))
         let customJournal = try FileJournal(
             configuration: FileJournalConfiguration(directory: customDirectory),
-            transformerRegistry: custom
+            transformerRegistry: custom,
         )
 
         let name = Notification.Name("shared-item")
@@ -135,12 +136,12 @@ struct TransformerRegistryTests {
         let plain = try #require(
             try FileJournalReader(configuration: FileJournalConfiguration(directory: plainDirectory))
                 .read()
-                .first { $0.label == "touched" }
+                .first { $0.label == "touched" },
         )
         let transformed = try #require(
             try FileJournalReader(configuration: FileJournalConfiguration(directory: customDirectory))
                 .read()
-                .first { $0.label == "touched" }
+                .first { $0.label == "touched" },
         )
 
         #expect(plain.arguments["item"] != transformed.arguments["item"])
@@ -155,7 +156,7 @@ struct TransformerRegistryTests {
         let configuration = FileJournalConfiguration(directory: directory)
         let journal = try FileJournal(configuration: configuration)
 
-        let url = URL(string: "https://example.com/a/b?c=1")!
+        let url = try #require(URL(string: "https://example.com/a/b?c=1"))
         journal.begin("root").info("hit", ["url": url])
         journal.finish("Finished.")
 

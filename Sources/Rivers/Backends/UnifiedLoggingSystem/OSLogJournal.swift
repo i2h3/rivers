@@ -28,7 +28,7 @@ public final class OSLogJournal: Journaling, MessageDispatching {
     public func begin(_ label: StaticString) -> Activity {
         let next = roots.next()
         let id = ActivityID(path: [next])
-        
+
         let activity = Activity(id: id, parent: nil, writer: makeAndDispatchMessage)
         activity.info(label)
 
@@ -55,12 +55,12 @@ public final class OSLogJournal: Journaling, MessageDispatching {
         let formatted = "[\(message.activity)] \(message.label) \(message.arguments)"
 
         switch message.level {
-            case .debug:
-                logger.debug("\(formatted, privacy: .public)")
-            case .info:
-                logger.info("\(formatted, privacy: .public)")
-            case .error:
-                logger.error("\(formatted, privacy: .public)")
+        case .debug:
+            logger.debug("\(formatted, privacy: .public)")
+        case .info:
+            logger.info("\(formatted, privacy: .public)")
+        case .error:
+            logger.error("\(formatted, privacy: .public)")
         }
     }
 }

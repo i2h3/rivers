@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT
 
 import Foundation
-import Testing
 @testable import Rivers
+import Testing
 
 @Suite("Message")
 struct MessageTests {
@@ -15,7 +15,7 @@ struct MessageTests {
             date: Date(timeIntervalSince1970: 0),
             level: .info,
             label: "hello",
-            arguments: [:]
+            arguments: [:],
         )
 
         let encoder = JSONEncoder()
@@ -33,7 +33,7 @@ struct MessageTests {
             date: Date(timeIntervalSince1970: 1234),
             level: .error,
             label: "boom",
-            arguments: ["k": "v"]
+            arguments: ["k": "v"],
         )
 
         let data = try JSONEncoder().encode(message)
@@ -56,7 +56,7 @@ struct MessageTests {
             date: original,
             level: .info,
             label: "x",
-            arguments: [:]
+            arguments: [:],
         )
 
         let data = try JSONEncoder().encode(message)

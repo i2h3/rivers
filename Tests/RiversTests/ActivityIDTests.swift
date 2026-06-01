@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT
 
 import Foundation
-import Testing
 @testable import Rivers
+import Testing
 
 @Suite("ActivityID")
 struct ActivityIDTests {

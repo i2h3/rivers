@@ -2,7 +2,7 @@
 --maxwidth none
 --wraparguments preserve
 --wrapparameters preserve
---disable wrap,wrapArguments
+--disable swiftTestingTestCaseNames,wrap,wrapArguments
 
 # Expand single-statement guard/if/else bodies onto separate lines.
 --enable wrapConditionalBodies

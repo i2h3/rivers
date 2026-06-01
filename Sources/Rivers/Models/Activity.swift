@@ -34,7 +34,7 @@ public struct Activity: Identifiable, Sendable {
         self.id = id
         self.parent = parent
         start = Date()
-        self.write = writer
+        write = writer
         children = ChildCounter()
     }
 
