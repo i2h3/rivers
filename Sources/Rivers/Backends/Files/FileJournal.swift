@@ -5,12 +5,13 @@ import Compression
 import Foundation
 
 ///
-/// A journal that writes messages as JSON-lines into rotating files on disk. The active file is `log.jsonl`. When it exceeds the configured size threshold it is renamed to `<timestamp>.jsonl`, compressed with `lzfse`, and replaced by a fresh `log.jsonl`. Records are encoded one per line.
+/// A journal that writes messages as JSON-lines into rotating files on disk. Every journal lifetime is isolated inside its own subdirectory of `configuration.directory`, named after `configuration.sessionID`. The active file in that subdirectory is `log.jsonl`. When it exceeds the configured size threshold it is renamed to `<timestamp>-<suffix>.jsonl`, compressed with `lzfse`, and replaced by a fresh `log.jsonl`. Records are encoded one per line.
 ///
 /// Writes happen on a private serial dispatch queue so callers never block on I/O and the chronological order of `record` calls is preserved across threads.
 ///
 public final class FileJournal: Journaling, MessageDispatching, @unchecked Sendable {
     private let configuration: FileJournalConfiguration
+    private let sessionFolder: URL
     private let queue: DispatchQueue
     private let roots: ChildCounter
     private let encoder: JSONEncoder
@@ -21,11 +22,12 @@ public final class FileJournal: Journaling, MessageDispatching, @unchecked Senda
     let transformerRegistry: TransformerRegistry
 
     ///
-    /// Open (or create) the active log file in the configured directory. Throws if the directory cannot be created or the file cannot be opened for writing.
+    /// Create the session subdirectory inside the configured parent directory and open its active log file. Throws if the directory cannot be created or the file cannot be opened for writing.
     ///
     public init(configuration: FileJournalConfiguration, transformerRegistry: TransformerRegistry = TransformerRegistry()) throws {
         self.configuration = configuration
-        queue = DispatchQueue(label: "rivers.file.\(configuration.directory.lastPathComponent)", qos: .utility)
+        sessionFolder = configuration.directory.appendingPathComponent(configuration.sessionID, isDirectory: true)
+        queue = DispatchQueue(label: "rivers.file.\(configuration.sessionID)", qos: .utility)
         roots = ChildCounter()
 
         let encoder = JSONEncoder()
@@ -33,7 +35,7 @@ public final class FileJournal: Journaling, MessageDispatching, @unchecked Senda
         self.encoder = encoder
         self.transformerRegistry = transformerRegistry
 
-        try FileManager.default.createDirectory(at: configuration.directory, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: sessionFolder, withIntermediateDirectories: true)
         try openActiveFile()
     }
 
@@ -72,7 +74,7 @@ public final class FileJournal: Journaling, MessageDispatching, @unchecked Senda
     }
 
     private var activeFileURL: URL {
-        configuration.directory.appendingPathComponent("log.jsonl")
+        sessionFolder.appendingPathComponent("log.jsonl")
     }
 
     private func openActiveFile() throws {
@@ -109,12 +111,8 @@ public final class FileJournal: Journaling, MessageDispatching, @unchecked Senda
         try handle?.close()
         handle = nil
 
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-
-        let timestamp = formatter.string(from: Date()).replacingOccurrences(of: ":", with: "-")
-        let rotatedName = "\(timestamp).jsonl"
-        let rotatedURL = configuration.directory.appendingPathComponent(rotatedName)
+        let rotatedName = "\(FileJournalConfiguration.makeIdentifier()).jsonl"
+        let rotatedURL = sessionFolder.appendingPathComponent(rotatedName)
 
         try FileManager.default.moveItem(at: activeFileURL, to: rotatedURL)
         try compress(source: rotatedURL)

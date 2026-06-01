@@ -13,7 +13,7 @@ struct Executable {
         let transformerRegistry = TransformerRegistry()
         let journal: any Journaling = try FileJournal(configuration: configuration, transformerRegistry: transformerRegistry)
 
-        print("Log directory: \(directory.path(percentEncoded: false))")
+        print("Log directory: \(configuration.directory.path(percentEncoded: false))")
 
         let server = journal.begin("Server")
         work(8)
@@ -39,7 +39,7 @@ struct Executable {
         server.finish("Finished.")
         journal.finish("Finished.")
 
-        let logFile = directory.appendingPathComponent("log.jsonl")
+        let logFile = configuration.directory.appendingPathComponent(configuration.sessionID).appendingPathComponent("log.jsonl")
         let contents = try String(contentsOf: logFile, encoding: .utf8)
         print(contents)
     }

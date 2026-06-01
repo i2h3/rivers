@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Iva Horn
 // SPDX-License-Identifier: MIT
 
-import Testing
 @testable import Rivers
+import Testing
 
 @Suite("ChildCounter")
 struct ChildCounterTests {
@@ -17,10 +17,10 @@ struct ChildCounterTests {
     @Test("Concurrent callers each receive a unique value")
     func concurrentUniqueness() async {
         let counter = ChildCounter()
-        let iterations = 1_000
+        let iterations = 1000
 
         let values = await withTaskGroup(of: UInt32.self, returning: [UInt32].self) { group in
-            for _ in 0..<iterations {
+            for _ in 0 ..< iterations {
                 group.addTask { counter.next() }
             }
 

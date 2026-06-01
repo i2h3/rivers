@@ -2,21 +2,22 @@
 // SPDX-License-Identifier: MIT
 
 import Foundation
-import Testing
 @testable import Rivers
+import Testing
 
 @Suite("FileJournal")
 struct FileJournalTests {
     private func makeTempDirectory() -> URL {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("rivers-tests-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathExtension(FileJournalConfiguration.directoryExtension)
         try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
 
         return url
     }
 
-    @Test("Reader returns messages in chronological order from the active file")
-    func activeFileRoundTrip() throws {
+    @Test
+    func `Reader returns messages in chronological order from the active file`() throws {
         let directory = makeTempDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
@@ -34,20 +35,20 @@ struct FileJournalTests {
         let reader = FileJournalReader(configuration: configuration)
         let messages = try reader.read()
 
-        #expect(messages.count == 6)
-        #expect(messages.map(\.label) == ["root", "first", "second", "child", "third", "Finished."])
-        #expect(messages[2].arguments == ["k": "v"])
-        #expect(messages[3].activity == child.id)
-        #expect(messages[3].parent == root.id)
-        #expect(messages[3].arguments.isEmpty)
+        #expect(messages.count == 7)
+        #expect(messages.map(\.label) == [configuration.sessionID, "root", "first", "second", "child", "third", "Finished."])
+        #expect(messages[3].arguments == ["k": "v"])
+        #expect(messages[4].activity == ActivityID(path: [1, 1, 1]))
+        #expect(messages[4].parent == ActivityID(path: [1, 1]))
+        #expect(messages[4].arguments.isEmpty)
     }
 
-    @Test("Rotation compresses old files and the reader merges them")
-    func rotationAndReaderMerge() throws {
+    @Test
+    func `Rotation compresses old files and the reader merges them`() throws {
         let directory = makeTempDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let configuration = FileJournalConfiguration(directory: directory, maxFileBytes: 1_024)
+        let configuration = FileJournalConfiguration(directory: directory, maxFileBytes: 1024)
         let journal = try FileJournal(configuration: configuration)
 
         let activity = journal.begin("root")
@@ -58,15 +59,17 @@ struct FileJournalTests {
 
         journal.finish("Finished.")
 
-        let entries = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+        let sessionFolder = directory.appendingPathComponent(configuration.sessionID)
+        let entries = try FileManager.default.contentsOfDirectory(at: sessionFolder, includingPropertiesForKeys: nil)
         let archives = entries.filter { $0.lastPathComponent.hasSuffix(".jsonl.lzfse") }
         #expect(!archives.isEmpty)
 
         let reader = FileJournalReader(configuration: configuration)
         let messages = try reader.read()
 
-        #expect(messages.count == 52)
+        #expect(messages.count == 53)
         let labels = Set(messages.map(\.label))
+        #expect(labels.contains(configuration.sessionID))
         #expect(labels.contains("root"))
 
         for _ in 0 ..< 50 {
@@ -77,8 +80,8 @@ struct FileJournalTests {
         #expect(dates == dates.sorted())
     }
 
-    @Test("Activity finish records an info message under the activity")
-    func activityFinishRecordsInfoMessage() throws {
+    @Test
+    func `Activity finish records an info message under the activity`() throws {
         let directory = makeTempDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
@@ -95,31 +98,32 @@ struct FileJournalTests {
         let reader = FileJournalReader(configuration: configuration)
         let messages = try reader.read()
 
-        #expect(messages.map(\.label) == ["root", "child", "Finished.", "Finished.", "Finished."])
-
-        #expect(messages[2].level == .info)
-        #expect(messages[2].activity == child.id)
-        #expect(messages[2].parent == root.id)
-        #expect(messages[2].arguments == ["result": "ok"])
+        #expect(messages.map(\.label) == [configuration.sessionID, "root", "child", "Finished.", "Finished.", "Finished."])
 
         #expect(messages[3].level == .info)
-        #expect(messages[3].activity == root.id)
-        #expect(messages[3].parent == nil)
-        #expect(messages[3].arguments.isEmpty)
+        #expect(messages[3].activity == ActivityID(path: [1, 1, 1]))
+        #expect(messages[3].parent == ActivityID(path: [1, 1]))
+        #expect(messages[3].arguments == ["result": "ok"])
+
+        #expect(messages[4].level == .info)
+        #expect(messages[4].activity == ActivityID(path: [1, 1]))
+        #expect(messages[4].parent == ActivityID(path: [1]))
+        #expect(messages[4].arguments.isEmpty)
     }
 
-    @Test("Reader returns empty when directory is missing")
-    func readerHandlesMissingDirectory() throws {
+    @Test
+    func `Reader returns empty when directory is missing`() throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("rivers-missing-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathExtension(FileJournalConfiguration.directoryExtension)
         let configuration = FileJournalConfiguration(directory: directory)
         let reader = FileJournalReader(configuration: configuration)
 
         #expect(try reader.read().isEmpty)
     }
 
-    @Test("Reader ignores stray files that are not the active log or a journal archive")
-    func readerIgnoresStrayFiles() throws {
+    @Test
+    func `Reader ignores stray files that are not session subdirectories`() throws {
         let directory = makeTempDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
@@ -134,6 +138,78 @@ struct FileJournalTests {
         let reader = FileJournalReader(configuration: configuration)
         let messages = try reader.read()
 
-        #expect(messages.map(\.label) == ["only", "kept", "Finished."])
+        #expect(messages.map(\.label) == [configuration.sessionID, "only", "kept", "Finished."])
+    }
+
+    @Test
+    func `Successive journal lifetimes against the same parent directory produce separate, namespaced sessions`() throws {
+        let directory = makeTempDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let configurationA = FileJournalConfiguration(directory: directory)
+        let journalA = try FileJournal(configuration: configurationA)
+        journalA.begin("a-root").info("a-event")
+        journalA.finish("a-done")
+
+        Thread.sleep(forTimeInterval: 0.1)
+
+        let configurationB = FileJournalConfiguration(directory: directory)
+        let journalB = try FileJournal(configuration: configurationB)
+        journalB.begin("b-root").info("b-event")
+        journalB.finish("b-done")
+
+        let reader = FileJournalReader(configuration: FileJournalConfiguration(directory: directory))
+        let messages = try reader.read()
+
+        #expect(messages.map(\.label) == [configurationA.sessionID, "a-root", "a-event", "a-done", configurationB.sessionID, "b-root", "b-event", "b-done"])
+
+        let firstSynthetic = messages[0]
+        #expect(firstSynthetic.activity == ActivityID(path: [1]))
+        #expect(firstSynthetic.parent == nil)
+
+        let aRoot = messages[1]
+        #expect(aRoot.activity == ActivityID(path: [1, 1]))
+        #expect(aRoot.parent == ActivityID(path: [1]))
+
+        let secondSynthetic = messages[4]
+        #expect(secondSynthetic.activity == ActivityID(path: [2]))
+        #expect(secondSynthetic.parent == nil)
+
+        let bRoot = messages[5]
+        #expect(bRoot.activity == ActivityID(path: [2, 1]))
+        #expect(bRoot.parent == ActivityID(path: [2]))
+
+        let sessionFolders = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.isDirectoryKey])
+            .filter { (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true }
+            .map(\.lastPathComponent)
+            .sorted()
+        #expect(sessionFolders == [configurationA.sessionID, configurationB.sessionID].sorted())
+    }
+
+    @Test
+    func `Configuration appends the package extension when the caller's URL lacks it`() {
+        let bare = URL(fileURLWithPath: "/tmp/MyLogs", isDirectory: true)
+        let configuration = FileJournalConfiguration(directory: bare)
+
+        #expect(configuration.directory.pathExtension == FileJournalConfiguration.directoryExtension)
+        #expect(configuration.directory.lastPathComponent == "MyLogs.rivers")
+    }
+
+    @Test
+    func `Configuration leaves the URL alone when the extension is already present`() {
+        let packaged = URL(fileURLWithPath: "/tmp/MyLogs.rivers", isDirectory: true)
+        let configuration = FileJournalConfiguration(directory: packaged)
+
+        #expect(configuration.directory.lastPathComponent == "MyLogs.rivers")
+        #expect(!configuration.directory.lastPathComponent.contains("rivers.rivers"))
+    }
+
+    @Test
+    func `Configuration augments rather than replaces a foreign extension`() {
+        let foreign = URL(fileURLWithPath: "/tmp/MyApp.log", isDirectory: true)
+        let configuration = FileJournalConfiguration(directory: foreign)
+
+        #expect(configuration.directory.lastPathComponent == "MyApp.log.rivers")
+        #expect(configuration.directory.pathExtension == FileJournalConfiguration.directoryExtension)
     }
 }

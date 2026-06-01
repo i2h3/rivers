@@ -67,7 +67,7 @@ public struct Message: Codable, Sendable {
         guard let parsed = Self.makeDateFormatter().date(from: dateString) else {
             throw DecodingError.dataCorruptedError(forKey: .date, in: container, debugDescription: "Invalid ISO8601 date with fractional seconds: \(dateString)")
         }
-        
+
         date = parsed
         level = try container.decode(Level.self, forKey: .level)
         label = try container.decode(String.self, forKey: .label)

@@ -12,30 +12,30 @@ let package = Package(
         .macOS(.v26),
         .tvOS(.v26),
         .visionOS(.v26),
-        .watchOS(.v26)
+        .watchOS(.v26),
     ],
     products: [
         .executable(
             name: "Example",
-            targets: ["Example"]
+            targets: ["Example"],
         ),
         .library(
             name: "Rivers",
-            targets: ["Rivers"]
+            targets: ["Rivers"],
         ),
     ],
     targets: [
         .executableTarget(
             name: "Example",
-            dependencies: ["Rivers"]
+            dependencies: ["Rivers"],
         ),
         .target(
-            name: "Rivers"
+            name: "Rivers",
         ),
         .testTarget(
             name: "RiversTests",
-            dependencies: ["Rivers"]
+            dependencies: ["Rivers"],
         ),
     ],
-    swiftLanguageModes: [.v6]
+    swiftLanguageModes: [.v6],
 )
