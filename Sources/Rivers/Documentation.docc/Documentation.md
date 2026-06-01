@@ -31,6 +31,10 @@ Activity labels and message texts are `StaticString` to enforce separation of un
 
 ## Topics
 
+### Log package format
+
+- <doc:LogPackageFormat>
+
 ### Recording activities and messages
 
 - ``Activity``

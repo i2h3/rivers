@@ -39,3 +39,9 @@ Tools built on top of the library — visualizers, debuggers, batch analyses —
 let reader = FileJournalReader(configuration: configuration)
 let messages = try reader.read()
 ```
+
+## Log package format
+
+For a compact, authoritative description of the on-disk format and JSON Lines schema — including field types, encoding rules, and safe parsing guidance — see [`AGENTS.md`](./AGENTS.md). The same information is available as a DocC article (`LogPackageFormat`) inside the package documentation.
+
+**Quick summary**: each line in every `.jsonl` file is a JSON object with four required fields (`activity`, `date`, `label`, `level`) and two optional fields (`parent`, `arguments`). There is a single record type and no discriminator field. Rotated files carry the `.jsonl.lzfse` extension and are compressed with `lzfse`.
