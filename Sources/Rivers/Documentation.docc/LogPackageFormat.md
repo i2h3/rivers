@@ -79,15 +79,3 @@ Raw `.jsonl` paths and reader output paths therefore differ. When parsing raw fi
 
 There is currently no version field in the record. This document describes the current and only schema. If a future version introduces a version field, treat records that lack it as version 1.
 
-## Topics
-
-### Record model
-
-- ``Message``
-- ``ActivityID``
-- ``Level``
-
-### Reading packages
-
-- ``FileJournalReader``
-- ``FileJournalConfiguration``
